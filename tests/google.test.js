@@ -73,6 +73,8 @@ test('a public HTTPS send embeds one unique tracking image in the HTML message',
   const encodedHtml = mime.match(/Content-Type: text\/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n([a-zA-Z0-9+/=\r\n]+)/)[1]
   const html = Buffer.from(encodedHtml.replaceAll('\r\n', ''), 'base64').toString('utf8')
   assert.match(html, /https:\/\/stagefinder\.example\/api\/tracking\/pixel\/a{32}/)
+  assert.match(html, /image de suivi d’ouverture/)
+  assert.match(html, /https:\/\/stagefinder\.example\/confidentialite/)
 })
 test('resume excludes confirmed deliveries and duplicate company selections', async () => {
   let calls = 0

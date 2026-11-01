@@ -28,7 +28,7 @@ Le serveur écoute sur `PORT` (3000 par défaut), sert uniquement `dist/` et fou
 
 1. Dans Supabase, exécuter `supabase/schema.sql` dans **SQL Editor**, puis relever l’URL du projet et une clé secrète (**Settings → API Keys**).
 2. Dans Render, choisir **New → Blueprint** et sélectionner ce dépôt : `render.yaml` crée le service et demande les variables secrètes.
-3. Renseigner `VITE_GOOGLE_CLIENT_ID`, `STRIPE_SECRET_KEY`, `ADMIN_PASSWORD`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY` et `BRAVE_SEARCH_API_KEY`. Une variable `VITE_*` modifiée demande un nouveau déploiement, car elle est lue à la compilation. Ne pas définir `VITE_GMAIL_TEST_RECIPIENT` ni `ANALYTICS_DATA_FILE` sur Render.
+3. Renseigner `VITE_GOOGLE_CLIENT_ID`, `STRIPE_SECRET_KEY` (clé `sk_live_…` obligatoire sur Render), `ADMIN_PASSWORD`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `BRAVE_SEARCH_API_KEY` et les variables `VITE_LEGAL_*`. Une variable `VITE_*` modifiée demande un nouveau déploiement, car elle est lue à la compilation. Ne pas définir `ANALYTICS_DATA_FILE` sur Render.
 4. Ajouter l’URL `https://….onrender.com` aux origines JavaScript autorisées du client OAuth Google.
 5. Vérifier que les journaux Render affichent `Statistiques : Supabase`.
 
@@ -79,4 +79,13 @@ Stripe Checkout est ouvert dans un second onglet. Garder l’onglet Stage Finder
 
 Suivre `GOOGLE_SETUP.md`, vérifier l’origine HTTPS du domaine dans Google Cloud et l’accès OAuth des utilisateurs prévus. `VITE_ENABLE_GMAIL=true` est activé ; fournir `VITE_GOOGLE_CLIENT_ID` avant de reconstruire. Une variable `VITE_*` est publique : ne jamais y placer un secret. L’origine `http://localhost:3000` doit également être autorisée pour les essais locaux.
 
-Quand `VITE_GMAIL_TEST_RECIPIENT` est renseigné au moment de la compilation, tous les envois Gmail sont redirigés uniquement vers cette adresse, même dans un build de production. L’interface affiche clairement le mode test avant l’envoi. Vider cette variable puis reconstruire le site pour envoyer aux entreprises sélectionnées.
+
+## Mise en production réelle
+
+Le mode test des e-mails n’existe plus : chaque envoi part vers l’adresse de l’entreprise, y compris depuis un serveur local. Sur Render, le serveur refuse les clés Stripe de test. En local, une clé `sk_test_…` reste possible pour essayer le paiement.
+
+Les commandes réelles restent fermées tant que `VITE_LEGAL_NAME`, `VITE_LEGAL_ADDRESS`, `VITE_LEGAL_EMAIL`, `VITE_LEGAL_PHONE`, `VITE_LEGAL_SIRET`, `VITE_LEGAL_MEDIATOR` et `VITE_LEGAL_HOST` ne sont pas renseignées. Ces variables sont lues à la compilation : relancer un déploiement après les avoir modifiées. Ajouter `VITE_LEGAL_VAT` si une mention de TVA s’applique. Dans Stripe, activer l’envoi des reçus par e-mail. Après toute modification des CGV, changer `TERMS_VERSION` dans `server/payment.js`.
+
+Le pixel de suivi est actif sur un site HTTPS public, et chaque e-mail contient une mention qui l’explique. La recommandation de la CNIL du 12 mars 2026 demande le consentement préalable du destinataire : cette mention n’en tient pas lieu. Mettre `VITE_TRACKING_PIXEL=false` puis redéployer pour retirer le pixel.
+
+Les textes juridiques (`src/features/legal/Legal.jsx`) sont un projet à faire relire par un professionnel du droit.

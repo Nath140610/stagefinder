@@ -44,3 +44,21 @@ test('landing and all flow screens render without runtime errors', async () => {
     }
   } finally { await vite.close() }
 })
+test('legal pages and purchase warnings are published', async () => {
+  const vite = await createServer({ server:{ middlewareMode:true, hmr:false }, appType:'custom' })
+  try {
+    const { default:LegalPage, LEGAL_PATHS } = await vite.ssrLoadModule('/src/features/legal/Legal.jsx')
+    const { default:Payment } = await vite.ssrLoadModule('/src/features/flow/Payment.jsx')
+    assert.deepEqual(Object.keys(LEGAL_PATHS), ['/mentions-legales', '/cgv', '/confidentialite'])
+    const terms = renderToStaticMarkup(React.createElement(LegalPage, { path:'/cgv' }))
+    assert.match(terms, /Formulaire de rétractation/)
+    assert.match(terms, /médiateur de la consommation/)
+    assert.match(renderToStaticMarkup(React.createElement(LegalPage, { path:'/confidentialite' })), /Limited Use/)
+    const payment = renderToStaticMarkup(React.createElement(Payment, { s:{ ...initial, selected:['a'] }, d:()=>{} }))
+    assert.match(payment, /Aucune garantie de résultat/)
+    assert.match(payment, /Ton compte Google est indispensable/)
+    assert.match(payment, /Commander avec obligation de paiement/)
+    assert.equal(payment.match(/type="checkbox"/g).length, 4)
+    assert.doesNotMatch(payment, /checked=/)
+  } finally { await vite.close() }
+})

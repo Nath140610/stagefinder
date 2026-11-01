@@ -96,7 +96,6 @@ export function Success({ s, d, onNext }) {
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
   }, [sending])
-  const testRecipient = String(import.meta.env.VITE_GMAIL_TEST_RECIPIENT || '').trim()
   const applications = s.companies.filter((company) => s.selected.includes(company.id))
   const pending = applications.filter(company => company.email && !s.applications.some(sent => sent.companyId === company.id))
   const manual = s.emailProvider === 'manual'
@@ -121,12 +120,11 @@ export function Success({ s, d, onNext }) {
         content:s.profile.description,
         cv:s.cv,
         letter:s.letter,
-        testRecipient,
         onProgress:({ sent, total, company, applications:sentSoFar }) => { d({ type:'put', key:'applications', value:[...s.applications, ...sentSoFar] }); setStatus(`Envoi ${sent}/${total} : ${company}`) }
       })
       d({ type:'put', key:'applications', value:[...s.applications, ...result.applications] })
       d({ type:'put', key:'testEmailSent', value:true })
-      setStatus((result.testMode ? `${result.sent} e-mail${result.sent > 1 ? 's' : ''} de test envoyé${result.sent > 1 ? 's' : ''} à ${testRecipient}.` : `${result.sent} candidature${result.sent > 1 ? 's' : ''} envoyée${result.sent > 1 ? 's' : ''}.`) + (result.trackingWarning ? ` ${result.trackingWarning}` : ''))
+      setStatus(`${result.sent} candidature${result.sent > 1 ? 's' : ''} envoyée${result.sent > 1 ? 's' : ''}.` + (result.trackingWarning ? ` ${result.trackingWarning}` : ''))
     } catch (reason) {
       setIssue(reason)
       setStatus(reason.message || 'Les e-mails n’ont pas pu être envoyés.')
@@ -147,8 +145,8 @@ export function Success({ s, d, onNext }) {
       <b>{complete ? `${s.applications.length} candidature(s) envoyée(s)` : `${pending.length} candidature(s) à envoyer automatiquement`}</b>
       <p>Un e-mail par entreprise, ton message personnalisé et tes deux pièces jointes. Les pistes sans e-mail public restent disponibles en mode manuel.</p>
       <p className="helper-text">{trackingEnabled() ? 'Chaque e-mail contient une image de suivi pour détecter un chargement dans la messagerie du destinataire.' : 'Le suivi d’ouverture nécessite un site public en HTTPS ; il n’est pas actif sur localhost.'}</p>
-      {testRecipient && <p className="notice"><b>Mode test actif :</b> aucun message ne sera envoyé aux entreprises. Tous les e-mails partiront uniquement vers {testRecipient}.</p>}
-      <details><summary>Vérifier les destinataires et les messages</summary>{pending.map(company => <div key={company.id}><b>{company.name} · {testRecipient || company.email}</b><p className="mail-preview">{personaliseMail(s.profile.description, company.name)}</p></div>)}</details>
+      {pending.length > 0 && <p className="notice"><b>Envoi réel :</b> ces e-mails partiront de ton compte vers les entreprises ci-dessous et ne pourront pas être annulés.</p>}
+      <details><summary>Vérifier les destinataires et les messages</summary>{pending.map(company => <div key={company.id}><b>{company.name} · {company.email}</b><p className="mail-preview">{personaliseMail(s.profile.description, company.name)}</p></div>)}</details>
       <p>Pièces jointes : {s.cv?.name || 'CV manquant'} · {s.letter?.name || 'Lettre manquante'}</p>
       {sending && <div className="mail-send-scene" aria-live="polite"><span className="send-envelope">✉</span><strong>Envoi des candidatures, une par une…</strong></div>}
       {status && <p role="status" className={issue ? 'auth-error' : 'success-message'}>{status}</p>}

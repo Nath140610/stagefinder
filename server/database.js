@@ -1,5 +1,8 @@
 const PAGE_SIZE = 1000
 const TIMEOUT_MS = 8000
+// The retention announced in the privacy policy. Orders are kept for accounting.
+const RETENTION_MS = 13 * 30.44 * 24 * 3600 * 1000
+const EXPIRING = { visits:'visited_at', flows:'first_seen', trackers:'created_at' }
 
 const time = {
   write:value => value == null ? null : new Date(value).toISOString(),
@@ -49,6 +52,10 @@ export function createSupabaseBackend(url = process.env.SUPABASE_URL, key = proc
   return {
     name:'Supabase',
     async load() {
+      const cutoff = new Date(Date.now() - RETENTION_MS).toISOString()
+      for (const [table, column] of Object.entries(EXPIRING)) {
+        await request(`${table}?${column}=lt.${cutoff}`, { method:'DELETE', headers:{ prefer:'return=minimal' } }).catch(error => console.error(`Purge impossible : ${error.message}`))
+      }
       const data = {}
       for (const collection of ['visits', ...Object.keys(COLLECTIONS)]) {
         data[collection] = {}

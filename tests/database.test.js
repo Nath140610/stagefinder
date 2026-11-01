@@ -18,6 +18,11 @@ function fakeSupabase() {
       for (const row of JSON.parse(options.body)) rows.set(row[key], row)
       return new Response(null, { status:201 })
     }
+    if (options.method === 'DELETE') {
+      const [column, filter] = [...parsed.searchParams.entries()][0]
+      for (const [id, row] of tables[table] || []) if (Date.parse(row[column]) < Date.parse(filter.slice(3))) tables[table].delete(id)
+      return new Response(null, { status:204 })
+    }
     const offset = Number(parsed.searchParams.get('offset')), limit = Math.min(Number(parsed.searchParams.get('limit')), 1000)
     return Response.json([...(tables[table]?.values() || [])].slice(offset, offset + limit))
   }
@@ -82,6 +87,16 @@ test('tables above the 1000-row response cap load completely', () => withFake(as
   const rows = fake.tables.visits = new Map()
   for (let index = 0; index < 2500; index++) { const id = randomUUID(); rows.set(id, { flow_id:id, visited_at:new Date().toISOString() }) }
   assert.equal((await open().stats()).visits, 2500)
+}))
+
+test('data older than the announced retention is erased, orders are kept', () => withFake(async fake => {
+  const old = new Date(Date.now() - 500 * 86400000).toISOString(), recent = new Date().toISOString()
+  fake.tables.visits = new Map([['old', { flow_id:'old', visited_at:old }], ['new', { flow_id:'new', visited_at:recent }]])
+  fake.tables.checkouts = new Map([['cs_old', { session_id:'cs_old', amount_cents:250, company_count:1, mode:'live', created_at:old, paid_at:old }]])
+  const stats = await open().stats()
+  assert.equal(stats.visits, 1)
+  assert.equal(stats.liveRevenueCents, 250)
+  assert.deepEqual(fake.calls.filter(call => call.method === 'DELETE').map(call => call.table).sort(), ['flows', 'trackers', 'visits'])
 }))
 
 test('a failed load is retried instead of starting empty', async () => {

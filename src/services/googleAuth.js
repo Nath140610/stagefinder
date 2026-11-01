@@ -66,6 +66,7 @@ const escapeHtml = (value) => String(value).replaceAll('&', '&amp;').replaceAll(
 const trackingBaseUrl = () => String(import.meta.env.VITE_TRACKING_BASE_URL || (typeof window !== 'undefined' ? window.location?.origin : '') || '').trim().replace(/\/+$/, '')
 const trackerUrl = (path) => new URL(path, `${trackingBaseUrl()}/`).href
 export function trackingEnabled() {
+  if (import.meta.env.VITE_TRACKING_PIXEL === 'false') return false
   try {
     const url = new URL(trackingBaseUrl())
     return url.protocol === 'https:' && !['localhost','127.0.0.1','::1'].includes(url.hostname) && !url.hostname.endsWith('.local')
@@ -98,7 +99,8 @@ export async function buildApplicationMessage({ to, companyName, candidateName, 
   ].map(async ({ file, filename }) => ({ filename, content:wrapBase64(toBase64(await file.arrayBuffer())) })))
   const body = personaliseMail(content, companyName)
   const trackingImage = trackingEnabled() && /^[a-zA-Z0-9_-]{32}$/.test(trackingToken || '') ? `<img src="${escapeHtml(trackerUrl(`/api/tracking/pixel/${trackingToken}`))}" width="1" height="1" alt="" style="display:block;border:0;width:1px;height:1px"/>` : ''
-  const htmlBody = `<div>${escapeHtml(body).replaceAll('\n', '<br>')}</div>${trackingImage}`
+  const trackingNotice = trackingImage ? `<p style="margin-top:24px;font-size:11px;color:#777">Ce message contient une image de suivi d’ouverture, ajoutée par Stage Finder. Pour l’éviter, désactivez le chargement des images. <a href="${escapeHtml(trackerUrl('/confidentialite'))}">En savoir plus ou s’opposer</a>.</p>` : ''
+  const htmlBody = `<div>${escapeHtml(body).replaceAll('\n', '<br>')}</div>${trackingNotice}${trackingImage}`
   const lines = [
     `To: ${to}`,
     `Subject: ${encodeHeader(`Candidature de ${candidateName}`)}`,
@@ -155,7 +157,7 @@ async function sendRawMessage(accessToken, raw) {
   } catch { throw Object.assign(new Error('Gmail n’a pas confirmé l’envoi. Vérifie tes messages envoyés avant de réessayer.'), { uncertain:true }) }
 }
 
-export async function sendApplications({ accessToken, applications, alreadySent = [], candidateName, content, cv, letter, testRecipient, onProgress=()=>{} }) {
+export async function sendApplications({ accessToken, applications, alreadySent = [], candidateName, content, cv, letter, onProgress=()=>{} }) {
   if (!accessToken) throw new Error('Reconnecte ton compte Google avant d’envoyer les candidatures.')
   const seen = new Set(alreadySent.map(row => row.companyId))
   const targets = applications.filter(company => { if (!company.email || seen.has(company.id)) return false; seen.add(company.id); return true })
@@ -165,14 +167,14 @@ export async function sendApplications({ accessToken, applications, alreadySent 
   for (const file of [cv?.file, letter?.file]) if (!file || file.size > 8 * 1024 * 1024) throw new Error('Ajoute un CV et une lettre PDF de moins de 8 Mo chacun.')
   let trackers = new Map(), trackingWarning = null
   const sentApplications = []
-  for (const company of targets) if (!/^[^\s<>@,;]+@[^\s<>@,;]+\.[a-z]{2,}$/i.test(testRecipient || company.email)) throw new Error(`Adresse e-mail invalide pour ${company.name}.`)
+  for (const company of targets) if (!/^[^\s<>@,;]+@[^\s<>@,;]+\.[a-z]{2,}$/i.test(company.email)) throw new Error(`Adresse e-mail invalide pour ${company.name}.`)
   if (trackingEnabled()) {
     try { trackers = await registerTrackers(targets) }
     catch { trackingWarning = 'Le suivi des ouvertures est indisponible pour cet envoi.' }
   }
   for (const company of targets) {
     const raw = await buildApplicationMessage({
-      to:testRecipient || company.email,
+      to:company.email,
       companyName:company.name,
       candidateName,
       content,
@@ -188,7 +190,7 @@ export async function sendApplications({ accessToken, applications, alreadySent 
       companyId:company.id,
       companyName:company.name,
       companyEmail:company.email,
-      recipientEmail:testRecipient || company.email,
+      recipientEmail:company.email,
       trackingToken:trackers.get(String(company.id)),
       gmailMessageId:gmailMessage.id,
       gmailThreadId:gmailMessage.threadId,
@@ -200,7 +202,7 @@ export async function sendApplications({ accessToken, applications, alreadySent 
     })
     onProgress({ sent:sentApplications.length, total:targets.length, company:company.name, applications:[...sentApplications] })
   }
-  return { sent:sentApplications.length, total:targets.length, testMode:Boolean(testRecipient), applications:sentApplications, trackingWarning }
+  return { sent:sentApplications.length, total:targets.length, applications:sentApplications, trackingWarning }
 }
 
 function fromBase64Url(value) {
@@ -270,7 +272,7 @@ async function getReplyFromThread(accessToken, application, threadId=application
 }
 
 async function findReplyOutsideThread(accessToken, application) {
-  const replyAddress = application.recipientEmail || import.meta.env.VITE_GMAIL_TEST_RECIPIENT || application.companyEmail
+  const replyAddress = application.recipientEmail || application.companyEmail
   if (!replyAddress) return null
   const since = new Date(application.sentAt || Date.now())
   const date = `${since.getFullYear()}/${String(since.getMonth() + 1).padStart(2, '0')}/${String(since.getDate()).padStart(2, '0')}`

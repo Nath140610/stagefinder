@@ -56,3 +56,5 @@ alter table public.trackers enable row level security;
 
 revoke all on public.visits, public.flows, public.links, public.checkouts, public.trackers from anon, authenticated;
 grant select, insert, update on public.visits, public.flows, public.links, public.checkouts, public.trackers to service_role;
+-- Le serveur efface les statistiques et les jetons de suivi de plus de 13 mois.
+grant delete on public.visits, public.flows, public.trackers to service_role;

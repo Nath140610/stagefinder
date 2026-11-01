@@ -34,10 +34,8 @@ Le jeton reste en mémoire et expire. Une reconnexion est proposée au besoin. R
 ```env
 VITE_ENABLE_GMAIL=true
 VITE_GOOGLE_CLIENT_ID=ton-client-id.apps.googleusercontent.com
-VITE_GMAIL_TEST_RECIPIENT=
 ```
 
-Quand le destinataire de test est renseigné, il s’applique à tous les builds et est affiché avant l’envoi. Tous les messages sont alors redirigés vers cette adresse et aucun n’est envoyé aux entreprises. Vider la variable puis reconstruire pour revenir aux destinataires sélectionnés.
 
 Reconstruire avec `npm run build` après une modification de variable `VITE_*`. Sur Docker, fournir `--build-arg VITE_GOOGLE_CLIENT_ID=...`. Les identifiants clients sont publics ; ne jamais fournir le secret OAuth dans une variable VITE.
 

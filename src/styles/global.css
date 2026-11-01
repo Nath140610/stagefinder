@@ -131,3 +131,15 @@ html,body,#root{max-width:100%;min-width:0}
 @media(prefers-reduced-motion:reduce){.mail-editor-input .intelligence-token{animation:none}}
 .dashboard-actions{display:flex;gap:.55rem;flex-wrap:wrap;justify-content:flex-end}
 @media(max-width:600px){.dashboard-actions{width:100%;justify-content:flex-start}.dashboard-actions .btn{font-size:.78rem;padding:.7rem 1rem}.application-badges{flex-wrap:wrap;justify-content:flex-end}}
+.site-footer a{margin-left:1rem;color:inherit;font-size:.82rem}
+.legal-page{max-width:760px;margin:0 auto;padding:2rem 1.25rem 4rem;line-height:1.6}
+.legal-page h1{margin:2rem 0 1rem}
+.legal-page h2{margin:1.8rem 0 .5rem;font-size:1.1rem}
+.legal-page blockquote{margin:1rem 0;padding:1rem;border-left:3px solid #cfe5d1;background:#f0f9f0;font-size:.9rem}
+.legal-page footer{display:flex;flex-wrap:wrap;gap:1rem;margin-top:3rem;font-size:.85rem}
+.purchase-terms{margin:1rem 0;text-align:left;font-size:.85rem;line-height:1.5}
+.purchase-terms h3{margin:0 0 .5rem;font-size:1rem}
+.purchase-terms ul{margin:0 0 1rem;padding-left:1.1rem}
+.purchase-terms li{margin-bottom:.45rem}
+.consent-row{display:flex;gap:.6rem;align-items:flex-start;margin-bottom:.6rem;cursor:pointer}
+.consent-row input{flex:none;width:auto;margin-top:.2rem}

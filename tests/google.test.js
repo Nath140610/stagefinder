@@ -46,18 +46,15 @@ test('batch sends separate personalized messages with both PDF attachments', asy
   })
 })
 
-test('test mode redirects every company message to the configured test inbox', async () => {
+test('every message goes to the company, with no way to redirect it to a test inbox', async () => {
   const requests = []
   globalThis.fetch = async (url, options) => { requests.push({ url, ...options }); return { ok:true, json:async () => ({ id:`test-${requests.length}` }) } }
-  const testRecipient = 'destinataire.test@example.com'
-  const result = await googleAuth.sendApplications({ ...options(), testRecipient })
-  assert.equal(result.testMode, true)
+  const result = await googleAuth.sendApplications({ ...options(), testRecipient:'destinataire.test@example.com' })
   assert.equal(requests.length, 2)
-  for (const request of requests) {
-    const mime = decode(JSON.parse(request.body).raw)
-    assert.match(mime, new RegExp(`To: ${testRecipient}\\r\\n`))
-    assert.doesNotMatch(mime, /To: (?:stage@alpha\.example|contact@beta\.example)/)
-  }
+  assert.deepEqual(result.applications.map(row => row.recipientEmail), requests.map(request => decode(JSON.parse(request.body).raw).match(/To: (.+)\r\n/)[1]))
+  const mimes = requests.map(request => decode(JSON.parse(request.body).raw))
+  assert.match(mimes[0], /To: stage@alpha\.example\r\n/)
+  assert.match(mimes[1], /To: contact@beta\.example\r\n/)
 })
 
 test('a public HTTPS send embeds one unique tracking image in the HTML message', async () => {

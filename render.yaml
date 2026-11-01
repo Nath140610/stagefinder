@@ -12,6 +12,8 @@ services:
         value: 22
       - key: VITE_ENABLE_GMAIL
         value: "true"
+      - key: VITE_TRACKING_PIXEL
+        value: "true"
       - key: VITE_GOOGLE_CLIENT_ID
         sync: false
       - key: STRIPE_SECRET_KEY
@@ -23,4 +25,20 @@ services:
       - key: SUPABASE_SECRET_KEY
         sync: false
       - key: BRAVE_SEARCH_API_KEY
+        sync: false
+      - key: VITE_LEGAL_NAME
+        sync: false
+      - key: VITE_LEGAL_ADDRESS
+        sync: false
+      - key: VITE_LEGAL_EMAIL
+        sync: false
+      - key: VITE_LEGAL_PHONE
+        sync: false
+      - key: VITE_LEGAL_SIRET
+        sync: false
+      - key: VITE_LEGAL_MEDIATOR
+        sync: false
+      - key: VITE_LEGAL_HOST
+        sync: false
+      - key: VITE_LEGAL_VAT
         sync: false

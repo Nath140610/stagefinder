@@ -7,9 +7,24 @@ const originalKey = process.env.STRIPE_SECRET_KEY, originalFetch = globalThis.fe
 const request = { headers:{ origin:'http://localhost:3000', host:'localhost:3000' } }
 const ids = ['siret-12300001', 'osm-node-2', 'siret-12300003'], nonce = 'a'.repeat(48)
 const consent = { terms:true, risks:true, waiver:true, age:true, version:TERMS_VERSION }
+const LEGAL_VARIABLES = ['NAME', 'ADDRESS', 'EMAIL', 'PHONE', 'SIRET', 'MEDIATOR', 'HOST'].map(field => `VITE_LEGAL_${field}`)
+const fillLegal = () => { for (const name of LEGAL_VARIABLES) process.env[name] = 'renseigné' }
 afterEach(() => {
   if (originalKey == null) delete process.env.STRIPE_SECRET_KEY; else process.env.STRIPE_SECRET_KEY = originalKey
   globalThis.fetch = originalFetch
+  for (const name of LEGAL_VARIABLES) delete process.env[name]
+})
+test('live orders stay closed on the server until the legal details are set', async () => {
+  process.env.STRIPE_SECRET_KEY = 'sk_live_fake'
+  let called = false
+  globalThis.fetch = async () => { called = true; return { ok:true, json:async () => ({ id:'cs_live_a1B2c3D4e5F6g7H8', url:'https://checkout.stripe.com/c/pay/live' }) } }
+  await assert.rejects(createCheckout({ request, ids, nonce, consent }), /pas encore ouvertes/)
+  fillLegal()
+  delete process.env.VITE_LEGAL_SIRET
+  await assert.rejects(createCheckout({ request, ids, nonce, consent }), /pas encore ouvertes/)
+  assert.equal(called, false)
+  fillLegal()
+  assert.equal((await createCheckout({ request, ids, nonce, consent })).sessionId, 'cs_live_a1B2c3D4e5F6g7H8')
 })
 test('the server calculates 2 € + 0.50 € per company in cents', () => {
   assert.equal(amountCents(1), 250); assert.equal(amountCents(3), 350); assert.equal(amountCents(10), 700)
@@ -42,6 +57,7 @@ test('no checkout without every consent for the current terms', async () => {
   assert.equal(called, false)
 })
 test('a real payment session is accepted and confirmed', async () => {
+  fillLegal()
   process.env.STRIPE_SECRET_KEY = 'sk_live_fake'
   let params
   globalThis.fetch = async (_url, options) => { params = new URLSearchParams(options.body); return { ok:true, json:async () => ({ id:'cs_live_a1B2c3D4e5F6g7H8', url:'https://checkout.stripe.com/c/pay/live' }) } }
@@ -50,6 +66,7 @@ test('a real payment session is accepted and confirmed', async () => {
   assert.equal((await verifyCheckout({ sessionId:'cs_live_a1B2c3D4e5F6g7H8', ids, nonce })).paid, true)
 })
 test('production refuses a test key, so a fake card cannot unlock real sending', async () => {
+  fillLegal()
   const previous = process.env.RENDER
   process.env.RENDER = 'true'
   try {

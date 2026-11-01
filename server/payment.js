@@ -10,6 +10,9 @@ const stripeKey = () => {
   return !key || (process.env.RENDER === 'true' && !LIVE_KEY.test(key)) ? null : key
 }
 const paymentMode = () => LIVE_KEY.test(stripeKey() || '') ? 'live' : 'test'
+// Same list as legalReady on the page: the page alone would not stop a direct API call.
+const LEGAL_FIELDS = ['NAME', 'ADDRESS', 'EMAIL', 'PHONE', 'SIRET', 'MEDIATOR', 'HOST']
+const legalReady = () => LEGAL_FIELDS.every(field => String(process.env[`VITE_LEGAL_${field}`] || '').trim())
 const acceptedAll = consent => consent?.version === TERMS_VERSION && ['terms', 'risks', 'waiver', 'age'].every(name => consent[name] === true)
 const digest = value => createHash('sha256').update(value).digest('hex')
 const selection = ids => {
@@ -52,6 +55,7 @@ export async function createCheckout({ ids, nonce, request, consent }) {
   if (typeof nonce !== 'string' || !/^[a-f0-9]{32,64}$/.test(nonce)) throw new Error('Session de paiement invalide.')
   const origin = originFor(request)
   if (!acceptedAll(consent)) throw new Error('Accepte les conditions avant de commander.')
+  if (paymentMode() === 'live' && !legalReady()) throw Object.assign(new Error('Les commandes ne sont pas encore ouvertes.'), { status:503 })
   const params = new URLSearchParams({ mode:'payment', locale:'fr', 'allowed_payment_method_types[0]':'card', 'line_items[0][price_data][currency]':'eur', 'line_items[0][price_data][unit_amount]':'200', 'line_items[0][price_data][product_data][name]':'Préparation des candidatures', 'line_items[0][quantity]':'1', 'line_items[1][price_data][currency]':'eur', 'line_items[1][price_data][unit_amount]':'50', 'line_items[1][price_data][product_data][name]':'Entreprise sélectionnée', 'line_items[1][quantity]':String(count), 'metadata[count]':String(count), 'metadata[selection_hash]':hash, 'metadata[nonce_hash]':digest(nonce), 'metadata[terms_version]':TERMS_VERSION, 'metadata[withdrawal_waiver_at]':new Date().toISOString(), success_url:`${origin}/payment-return?session_id={CHECKOUT_SESSION_ID}`, cancel_url:`${origin}/payment-return?cancelled=1` })
   const session = await stripe('checkout/sessions', { method:'POST', body:params })
   if (!session.id || !session.url || !/^https:\/\/checkout\.stripe\.com\//.test(session.url)) throw Object.assign(new Error('Stripe n’a pas renvoyé de page de paiement valide.'), { status:502 })

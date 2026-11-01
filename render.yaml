@@ -26,6 +26,8 @@ services:
         sync: false
       - key: BRAVE_SEARCH_API_KEY
         sync: false
+      - key: GOOGLE_SITE_VERIFICATION
+        sync: false
       - key: VITE_LEGAL_NAME
         sync: false
       - key: VITE_LEGAL_ADDRESS

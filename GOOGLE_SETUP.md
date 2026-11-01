@@ -53,7 +53,7 @@ Documentation officielle : [modèle de jeton Google](https://developers.google.c
 
 Le site n’utilise que `gmail.send`, classé « sensible » : Google demande une validation, sans audit de sécurité. Pour la demander, dans **Google Auth Platform → Centre de validation** :
 
-- page d’accueil et règles de confidentialité (`/confidentialite`) sur le domaine vérifié de l’application ;
+- page d’accueil et règles de confidentialité (`/confidentialite`) sur le domaine vérifié de l’application. L’adresse gratuite `ton-site.onrender.com` peut servir : `onrender.com` est sur la liste publique des suffixes, donc cette adresse compte comme ton propre domaine. La vérifier dans Search Console (type « Préfixe de l’URL », méthode « Balise HTML »), mettre le code dans `GOOGLE_SITE_VERIFICATION` sur Render, puis redéployer ;
 - une vidéo montrant la connexion, l’écran de consentement et l’envoi d’une candidature ;
 - la justification suivante :
 

@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.text/
+.env
+.env.local
+.env.*.local
+client_secret_*.json
+*.zip
+data/

@@ -103,7 +103,7 @@ export default function Payment({ s, d }) {
           <li><b>Aucune garantie de résultat.</b> Nous ne garantissons ni un stage, ni une réponse, ni que chaque adresse soit valide ou à jour, ni que ton e-mail arrive en boîte de réception. Les entreprises sont des pistes, pas des offres confirmées.</li>
           <li><b>Ton compte Google est indispensable.</b> Les e-mails partent de ton Gmail. Si tu ne connectes pas ton compte ou refuses l’autorisation, nous ne pouvons rien envoyer. Google peut aussi limiter ou bloquer des envois.</li>
           <li><b>Tu restes responsable de tes envois.</b> Vérifie les destinataires, ton message et tes pièces jointes : un e-mail envoyé ne peut pas être annulé.</li>
-          <li><b>Image de suivi.</b> Chaque e-mail contient une image invisible qui signale une ouverture possible, avec une mention qui l’explique au destinataire.</li>
+          <li><b>Image de suivi.</b> Chaque e-mail contient une image invisible qui signale une ouverture possible. Une ligne en bas du message indique à l’entreprise qu’il a été envoyé avec Stage Finder et qu’il contient cette image.</li>
           <li><b>Rétractation.</b> Tu as 14 jours pour changer d’avis tant que tous tes e-mails ne sont pas partis. Si tu n’as lancé aucun envoi, tu es remboursé intégralement.</li>
         </ul>
         {Object.entries(CONSENTS).map(([name, label]) => <label key={name} className="consent-row"><input type="checkbox" checked={Boolean(accepted[name])} onChange={event => setAccepted(current => ({ ...current, [name]:event.target.checked }))} /><span>{label}</span></label>)}

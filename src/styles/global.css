@@ -143,3 +143,6 @@ html,body,#root{max-width:100%;min-width:0}
 .purchase-terms li{margin-bottom:.45rem}
 .consent-row{display:flex;gap:.6rem;align-items:flex-start;margin-bottom:.6rem;cursor:pointer}
 .consent-row input{flex:none;width:auto;margin-top:.2rem}
+.gmail-link{align-self:center;font-size:.85rem;font-weight:700}
+.status-choice{margin-left:.35rem;padding:.3rem .6rem;border:1px solid var(--line);border-radius:999px;background:transparent;font:inherit;font-size:.78rem;cursor:pointer}
+.status-choice[aria-pressed="true"]{border-color:currentColor;font-weight:700}

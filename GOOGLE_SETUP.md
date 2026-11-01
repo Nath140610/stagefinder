@@ -12,9 +12,8 @@ Dans [Google Cloud Console](https://console.cloud.google.com/apis/credentials), 
    - `http://127.0.0.1:3000` si cette adresse est utilisée ;
    - `http://localhost:5173` et `http://127.0.0.1:5173` pour Vite ;
    - l’origine HTTPS exacte du site après déploiement.
-3. Configurer l’écran de consentement avec `openid`, `email`, `profile` et `https://www.googleapis.com/auth/gmail.send`.
+3. Configurer l’écran de consentement avec `openid`, `email`, `profile` et `https://www.googleapis.com/auth/gmail.send` uniquement. Retirer `gmail.readonly` s’il y figure : ce scope imposerait un audit de sécurité.
 4. Tant que le projet est en mode test, ajouter les comptes autorisés dans **Audience → Utilisateurs tests**. Pour une ouverture à tous, suivre le processus de publication et de vérification requis par Google.
-5. Le scope `https://www.googleapis.com/auth/gmail.readonly` est demandé séparément seulement lors de l’actualisation des réponses depuis le tableau de bord. Il n’est pas requis pour envoyer.
 
 Le fichier de configuration OAuth local ne contient aucune origine JavaScript déclarée. Ce fichier peut être ancien : il faut vérifier les réglages actuels dans la console. Modifier ce JSON local ne modifie pas les réglages chez Google.
 
@@ -49,3 +48,13 @@ Reconstruire avec `npm run build` après une modification de variable `VITE_*`. 
 - **429** : attendre avant de reprendre ; le site ne relance pas les envois en boucle.
 
 Documentation officielle : [modèle de jeton Google](https://developers.google.com/identity/oauth2/web/guides/use-token-model), [envoi avec Gmail API](https://developers.google.com/workspace/gmail/api/guides/sending).
+
+## Validation Google
+
+Le site n’utilise que `gmail.send`, classé « sensible » : Google demande une validation, sans audit de sécurité. Pour la demander, dans **Google Auth Platform → Centre de validation** :
+
+- page d’accueil et règles de confidentialité (`/confidentialite`) sur le domaine vérifié de l’application ;
+- une vidéo montrant la connexion, l’écran de consentement et l’envoi d’une candidature ;
+- la justification suivante :
+
+> Stage Finder lets students apply for internships. After reviewing the recipients, the user clicks a button and the app sends one personalised application e-mail with their CV and cover letter from their own Gmail account to each selected company. gmail.send is the narrowest scope that allows this. The app cannot read the mailbox, and the access token stays in the browser.

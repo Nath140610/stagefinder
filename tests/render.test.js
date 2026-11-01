@@ -62,3 +62,13 @@ test('legal pages and purchase warnings are published', async () => {
     assert.doesNotMatch(payment, /checked=/)
   } finally { await vite.close() }
 })
+test('the dashboard works without reading the mailbox', async () => {
+  const vite = await createServer({ server:{ middlewareMode:true, hmr:false }, appType:'custom' })
+  try {
+    const { default:Dashboard } = await vite.ssrLoadModule('/src/features/dashboard/Dashboard.jsx')
+    const html = renderToStaticMarkup(React.createElement(Dashboard, { s:{ ...initial, applications:[{ companyId:'a', companyName:'Alpha', status:'En attente', sentAt:'2026-11-01T10:00:00Z' }] }, d:()=>{} }))
+    assert.match(html, /Alpha/)
+    assert.match(html, /Voir mes réponses dans Gmail/)
+    assert.doesNotMatch(html, /Vérifier les réponses/)
+  } finally { await vite.close() }
+})

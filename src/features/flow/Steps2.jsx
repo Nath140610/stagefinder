@@ -144,7 +144,7 @@ export function Success({ s, d, onNext }) {
     <div className={`test-send ${sending ? 'is-sending' : ''}`}>
       <b>{complete ? `${s.applications.length} candidature(s) envoyée(s)` : `${pending.length} candidature(s) à envoyer automatiquement`}</b>
       <p>Un e-mail par entreprise, ton message personnalisé et tes deux pièces jointes. Les pistes sans e-mail public restent disponibles en mode manuel.</p>
-      <p className="helper-text">{trackingEnabled() ? 'Chaque e-mail contient une image de suivi pour détecter un chargement dans la messagerie du destinataire.' : 'Le suivi d’ouverture nécessite un site public en HTTPS ; il n’est pas actif sur localhost.'}</p>
+      <p className="helper-text">{trackingEnabled() ? 'Chaque e-mail contient une image de suivi, et une ligne en bas du message en informe l’entreprise en indiquant l’envoi avec Stage Finder.' : 'Le suivi d’ouverture nécessite un site public en HTTPS ; il n’est pas actif sur localhost.'}</p>
       {pending.length > 0 && <p className="notice"><b>Envoi réel :</b> ces e-mails partiront de ton compte vers les entreprises ci-dessous et ne pourront pas être annulés.</p>}
       <details><summary>Vérifier les destinataires et les messages</summary>{pending.map(company => <div key={company.id}><b>{company.name} · {company.email}</b><p className="mail-preview">{personaliseMail(s.profile.description, company.name)}</p></div>)}</details>
       <p>Pièces jointes : {s.cv?.name || 'CV manquant'} · {s.letter?.name || 'Lettre manquante'}</p>

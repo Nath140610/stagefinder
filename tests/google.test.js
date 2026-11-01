@@ -24,7 +24,7 @@ test('Google asks for send access without reading the inbox and records token ex
   globalThis.fetch = async () => ({ ok:true, json:async () => ({ email:'student@example.com', email_verified:true, name:'Student' }) })
   const account = await googleAuth.connectGoogleAccount()
   assert.match(requested.scope, /gmail.send/); assert.doesNotMatch(requested.scope, /gmail.readonly/)
-  assert.equal(account.email, 'student@example.com'); assert.equal(account.canReadReplies, false)
+  assert.equal(account.email, 'student@example.com')
   assert.ok(account.expiresAt > Date.now() + 3500000)
 })
 test('declined Gmail permission cannot masquerade as successful connection', async () => {
@@ -73,7 +73,8 @@ test('a public HTTPS send embeds one unique tracking image in the HTML message',
   const encodedHtml = mime.match(/Content-Type: text\/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n([a-zA-Z0-9+/=\r\n]+)/)[1]
   const html = Buffer.from(encodedHtml.replaceAll('\r\n', ''), 'base64').toString('utf8')
   assert.match(html, /https:\/\/stagefinder\.example\/api\/tracking\/pixel\/a{32}/)
-  assert.match(html, /image de suivi d’ouverture/)
+  assert.match(html, /envoyée avec Stage Finder/)
+  assert.match(html, /image de suivi/)
   assert.match(html, /https:\/\/stagefinder\.example\/confidentialite/)
 })
 test('resume excludes confirmed deliveries and duplicate company selections', async () => {

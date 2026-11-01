@@ -1,6 +1,5 @@
 const GOOGLE_SCRIPT = 'https://accounts.google.com/gsi/client'
 const GMAIL_SEND_SCOPE = 'https://www.googleapis.com/auth/gmail.send'
-const GMAIL_READ_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly'
 
 let identityLoading
 export function loadGoogleIdentity() {
@@ -21,13 +20,13 @@ export function loadGoogleIdentity() {
   return identityLoading
 }
 
-export async function connectGoogleAccount({ readReplies = false } = {}) {
+export async function connectGoogleAccount() {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
   if (!clientId) throw new Error('La connexion Google n’est pas encore configurée pour ce site.')
   // Load the library beforehand so opening the popup stays inside the click.
   const google = window.google
   if (!google?.accounts?.oauth2) throw new Error('Google est encore en cours de chargement. Réessaie dans un instant.')
-  const scopes = ['openid', 'email', 'profile', GMAIL_SEND_SCOPE, ...(readReplies ? [GMAIL_READ_SCOPE] : [])]
+  const scopes = ['openid', 'email', 'profile', GMAIL_SEND_SCOPE]
   const token = await new Promise((resolve, reject) => {
     const client = google.accounts.oauth2.initTokenClient({
       client_id: clientId,
@@ -35,7 +34,7 @@ export async function connectGoogleAccount({ readReplies = false } = {}) {
       error_callback: () => reject(new Error('La fenêtre Google a été fermée ou bloquée. Réessaie.')),
       callback: result => {
         if (result.error) return reject(new Error('Google n’a pas autorisé la connexion. Vérifie les autorisations puis réessaie.'))
-        if (!google.accounts.oauth2.hasGrantedAllScopes(result, GMAIL_SEND_SCOPE, ...(readReplies ? [GMAIL_READ_SCOPE] : []))) return reject(new Error('Autorise l’envoi des e-mails dans la fenêtre Google pour continuer.'))
+        if (!google.accounts.oauth2.hasGrantedAllScopes(result, GMAIL_SEND_SCOPE)) return reject(new Error('Autorise l’envoi des e-mails dans la fenêtre Google pour continuer.'))
         resolve(result)
       }
     })
@@ -45,7 +44,7 @@ export async function connectGoogleAccount({ readReplies = false } = {}) {
   if (!response.ok) throw new Error('Impossible de récupérer le profil Google.')
   const profile = await response.json()
   if (!profile.email || profile.email_verified === false) throw new Error('Google n’a pas confirmé cette adresse e-mail.')
-  return { provider:'Google', email:profile.email, name:profile.name || profile.email, picture:profile.picture || null, accessToken:token.access_token, expiresAt:Date.now() + Number(token.expires_in || 3600) * 1000, canReadReplies:google.accounts.oauth2.hasGrantedAllScopes(token, GMAIL_READ_SCOPE) }
+  return { provider:'Google', email:profile.email, name:profile.name || profile.email, picture:profile.picture || null, accessToken:token.access_token, expiresAt:Date.now() + Number(token.expires_in || 3600) * 1000 }
 }
 
 export const accountExpired = account => !account?.accessToken || !account.expiresAt || account.expiresAt <= Date.now() + 30000
@@ -99,7 +98,7 @@ export async function buildApplicationMessage({ to, companyName, candidateName, 
   ].map(async ({ file, filename }) => ({ filename, content:wrapBase64(toBase64(await file.arrayBuffer())) })))
   const body = personaliseMail(content, companyName)
   const trackingImage = trackingEnabled() && /^[a-zA-Z0-9_-]{32}$/.test(trackingToken || '') ? `<img src="${escapeHtml(trackerUrl(`/api/tracking/pixel/${trackingToken}`))}" width="1" height="1" alt="" style="display:block;border:0;width:1px;height:1px"/>` : ''
-  const trackingNotice = trackingImage ? `<p style="margin-top:24px;font-size:11px;color:#777">Ce message contient une image de suivi d’ouverture, ajoutée par Stage Finder. Pour l’éviter, désactivez le chargement des images. <a href="${escapeHtml(trackerUrl('/confidentialite'))}">En savoir plus ou s’opposer</a>.</p>` : ''
+  const trackingNotice = trackingImage ? `<p style="margin-top:24px;font-size:11px;color:#777">Cette candidature a été envoyée avec Stage Finder, depuis le compte de ${escapeHtml(candidateName)}. Elle contient une image de suivi qui lui indique si le message a probablement été ouvert. Pour l’éviter, désactivez le chargement des images. <a href="${escapeHtml(trackerUrl('/confidentialite'))}">En savoir plus ou s’opposer</a>.</p>` : ''
   const htmlBody = `<div>${escapeHtml(body).replaceAll('\n', '<br>')}</div>${trackingNotice}${trackingImage}`
   const lines = [
     `To: ${to}`,
@@ -196,37 +195,11 @@ export async function sendApplications({ accessToken, applications, alreadySent 
       gmailThreadId:gmailMessage.threadId,
       status:'En attente',
       seenAt:null,
-      responseReceivedAt:null,
-      replyPreview:'',
       sentAt:new Date().toISOString()
     })
     onProgress({ sent:sentApplications.length, total:targets.length, company:company.name, applications:[...sentApplications] })
   }
   return { sent:sentApplications.length, total:targets.length, applications:sentApplications, trackingWarning }
-}
-
-function fromBase64Url(value) {
-  const base64 = String(value || '').replaceAll('-', '+').replaceAll('_', '/')
-  const padded = base64 + '='.repeat((4 - base64.length % 4) % 4)
-  try { return new TextDecoder().decode(Uint8Array.from(atob(padded), (character) => character.charCodeAt(0))) } catch { return '' }
-}
-
-function textFromPayload(payload) {
-  if (!payload) return ''
-  if (payload.mimeType === 'text/plain' && payload.body?.data) return fromBase64Url(payload.body.data)
-  return (payload.parts || []).map(textFromPayload).join('\n')
-}
-
-function headerValue(payload, name) {
-  return (payload?.headers || []).find((header) => header.name?.toLowerCase() === name.toLowerCase())?.value || ''
-}
-
-function classifyReply(text) {
-  const normalized = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-  if (/(mail delivery subsystem|votre message n.{0,10}pas ete envoye|delivery (?:has )?failed|undeliverable|address not found|adresse introuvable)/.test(normalized)) return { status:'En attente', deliveryError:true }
-  if (/(refus|malheureusement|ne pouvons pas|ne pas donner suite|pas retenu|pas poursuivre|pas de possibilite|candidature non retenue)/.test(normalized)) return { status:'Refusé', deliveryError:false }
-  if (/(accepte|retenu|bienvenue|heureux de|ravis de|entretien|rendez-vous|convocation|prochaine etape)/.test(normalized)) return { status:'Accepté', deliveryError:false }
-  return { status:'En attente', deliveryError:false }
 }
 
 async function getTrackerStatuses(applications) {
@@ -248,61 +221,4 @@ export async function refreshOpenStatuses(applications) {
     const tracker = trackers.get(application.trackingToken)
     return { ...application, seenAt:application.seenAt || tracker?.openedAt || null, opens:Math.max(application.opens || 0, tracker?.opens || 0) }
   })
-}
-
-function replyFromThread(thread, application) {
-  const sentAt = new Date(application.sentAt || 0).getTime()
-  const received = (thread.messages || []).filter((message) => {
-    if (message.id === application.gmailMessageId) return false
-    return Number(message.internalDate || 0) > sentAt + 500
-  }).at(-1)
-  if (!received) return null
-  const subject = headerValue(received.payload, 'Subject')
-  const text = textFromPayload(received.payload).replace(/\s+/g, ' ').trim()
-  const analysed = `${subject}\n${text}`
-  return { ...classifyReply(analysed), receivedAt:new Date(Number(received.internalDate || Date.now())).toISOString(), preview:(text || subject).slice(0, 180) }
-}
-
-async function getReplyFromThread(accessToken, application, threadId=application.gmailThreadId) {
-  if (!threadId) return null
-  const response = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/threads/${encodeURIComponent(threadId)}?format=full`, { headers:{ authorization:`Bearer ${accessToken}` } })
-  if (!response.ok) throw new Error('Gmail a refusé la lecture des réponses. Reconnecte ton compte Google et accepte l’accès aux e-mails.')
-  const thread = await response.json()
-  return replyFromThread(thread, application)
-}
-
-async function findReplyOutsideThread(accessToken, application) {
-  const replyAddress = application.recipientEmail || application.companyEmail
-  if (!replyAddress) return null
-  const since = new Date(application.sentAt || Date.now())
-  const date = `${since.getFullYear()}/${String(since.getMonth() + 1).padStart(2, '0')}/${String(since.getDate()).padStart(2, '0')}`
-  const query = `from:${replyAddress} after:${date}`
-  const response = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/threads?q=${encodeURIComponent(query)}&maxResults=5`, { headers:{ authorization:`Bearer ${accessToken}` } })
-  if (!response.ok) return null
-  const payload = await response.json()
-  for (const thread of payload.threads || []) {
-    const reply = await getReplyFromThread(accessToken, application, thread.id)
-    if (reply) return reply
-  }
-  return null
-}
-
-export async function refreshApplications({ accessToken, applications }) {
-  if (!accessToken) throw new Error('Reconnecte ton compte Google pour actualiser les statistiques.')
-  const trackers = await getTrackerStatuses(applications)
-  const refreshed = []
-  for (const application of applications) {
-    const tracker = trackers.get(application.trackingToken)
-    const reply = await getReplyFromThread(accessToken, application) || await findReplyOutsideThread(accessToken, application)
-    refreshed.push({
-      ...application,
-      seenAt:application.seenAt || tracker?.openedAt || null,
-      opens:tracker?.opens || application.opens || 0,
-      status:reply?.status || application.status || 'En attente',
-      deliveryError:Boolean(reply?.deliveryError || application.deliveryError),
-      responseReceivedAt:reply?.receivedAt || application.responseReceivedAt || null,
-      replyPreview:reply?.preview || application.replyPreview || ''
-    })
-  }
-  return refreshed
 }

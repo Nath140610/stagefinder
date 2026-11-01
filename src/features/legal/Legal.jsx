@@ -60,7 +60,7 @@ function Privacy() {
     <h2>Données restant dans ton navigateur</h2>
     <p>Ton profil, ton message, ton CV et ta lettre ne sont pas envoyés à notre serveur. Ils restent dans ton navigateur et partent directement vers Google lors de l’envoi. Une copie temporaire du profil et de la sélection reste dans l’onglet pendant le paiement.</p>
     <h2>Compte Google</h2>
-    <p>Avec ton accord, le site demande l’autorisation d’envoyer des e-mails (<code>gmail.send</code>) et, seulement lorsque tu actualises le tableau de bord, de lire les réponses à tes candidatures (<code>gmail.readonly</code>). Le jeton d’accès reste en mémoire dans ton navigateur. Les messages lus ne sont ni transmis à notre serveur, ni conservés, ni utilisés pour de la publicité. L’utilisation des données Google respecte la <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noreferrer">Google API Services User Data Policy</a>, y compris ses exigences de Limited Use.</p>
+    <p>Avec ton accord, le site demande ton identité Google (nom, adresse e-mail, photo) et l’autorisation d’envoyer des e-mails (<code>gmail.send</code>). Il ne peut pas lire ta boîte de réception. Le jeton d’accès reste en mémoire dans ton navigateur et n’est pas transmis à notre serveur. Ces données servent uniquement à envoyer les candidatures que tu lances, jamais à de la publicité. L’utilisation des données Google respecte la <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noreferrer">Google API Services User Data Policy</a>, y compris ses exigences de Limited Use.</p>
     <h2>Données traitées sur le serveur</h2>
     <ul>
       <li><b>Statistiques de visite</b> : identifiant aléatoire d’onglet, étapes atteintes, lien de partage utilisé. Finalité : mesure d’audience. Conservation : 13 mois.</li>
@@ -70,7 +70,7 @@ function Privacy() {
     </ul>
     <p>Le serveur limite le nombre de requêtes à l’aide de ton adresse IP, gardée en mémoire quelques minutes.</p>
     <h2>Image de suivi dans les e-mails</h2>
-    <p>Sur le site public, chaque candidature contient une image invisible et une mention qui l’explique. Son chargement signale une ouverture possible, sans preuve de lecture. Un destinataire peut bloquer les images de sa messagerie, ou demander des informations et s’opposer en écrivant à {fill(legalInfo.email)}.</p>
+    <p>Sur le site public, chaque candidature contient une image invisible et, en bas du message, une ligne qui informe l’entreprise de l’utilisation de Stage Finder et de cette image. Son chargement signale une ouverture possible, sans preuve de lecture. Un destinataire peut bloquer les images de sa messagerie, ou demander des informations et s’opposer en écrivant à {fill(legalInfo.email)}.</p>
     <h2>Prestataires</h2>
     <p>Render (hébergement), Supabase (base de données), Stripe (paiement), Google (connexion et envoi), Brave Search (recherche de sites), Annuaire des Entreprises, API Découpage administratif et services OpenStreetMap (recherche et carte). Certains sont situés hors de l’Union européenne, notamment aux États-Unis, et peuvent y traiter des données dans le cadre des garanties prévues par le RGPD.</p>
     <h2>Cookies et stockage local</h2>
